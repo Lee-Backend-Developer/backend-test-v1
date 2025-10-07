@@ -46,8 +46,16 @@ class PaymentService(
                 productName = command.productName,
             ),
         )
-        val hardcodedRate = java.math.BigDecimal("0.0300")
-        val hardcodedFixed = java.math.BigDecimal("100")
+
+        val feePolicy = feePolicyRepository.findEffectivePolicy(partnerId = partner.id)
+        if(feePolicy == null)
+            throw IllegalStateException("Fee policy not found for partner ${partner.id}")
+
+
+//        val hardcodedRate = java.math.BigDecimal("0.0300")
+//        val hardcodedFixed = java.math.BigDecimal("100")
+        val hardcodedRate = feePolicy.percentage
+        val hardcodedFixed = feePolicy.fixedFee
         val (fee, net) = FeeCalculator.calculateFee(command.amount, hardcodedRate, hardcodedFixed)
         val payment = Payment(
             partnerId = partner.id,
