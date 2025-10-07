@@ -55,7 +55,12 @@ allprojects {
         ignoreFailures.set(false)
     }
 
-    tasks.withType<Test> {
+    val testJavaLauncher = javaToolchains.launcherFor {
+        languageVersion = JavaLanguageVersion.of(21)
+    }
+
+    tasks.withType<Test>().configureEach {
+        javaLauncher.set(testJavaLauncher)
         useJUnitPlatform()
     }
 }
