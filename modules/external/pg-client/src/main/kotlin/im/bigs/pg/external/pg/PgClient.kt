@@ -40,7 +40,6 @@ class PgClient(
                     .defaultIfEmpty("(empty body)")
                     .flatMap { body ->
                         val message = "TestPg approval failed: HTTP ${clientResponse.statusCode().value()} $body"
-                        logger.warn(message)
                         Mono.error(CardForgeryException(message))
                     }
             }
@@ -49,7 +48,6 @@ class PgClient(
 
         if (!response.isSuccessful()) {
             val message = response.resultMessage ?: "TestPg rejected card"
-            logger.warn("TestPg rejected request: code={}, message={}", response.resultCode, response.resultMessage)
             throw CardForgeryException(message)
         }
 
@@ -104,4 +102,6 @@ private data class TestPgApproveResponse(
     }
 }
 
-class CardForgeryException(message: String) : RuntimeException(message)
+class CardForgeryException(message: String) : RuntimeException(message) {
+    override fun fillInStackTrace(): Throwable = this
+}
