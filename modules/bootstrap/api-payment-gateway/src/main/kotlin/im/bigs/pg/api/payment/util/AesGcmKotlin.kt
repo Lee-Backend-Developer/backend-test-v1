@@ -1,4 +1,4 @@
-package im.bigs.pg.api.payment
+package im.bigs.pg.api.payment.util
 
 import java.nio.charset.StandardCharsets
 import java.security.MessageDigest
@@ -24,20 +24,3 @@ fun encryptToBase64Url(apiKey: String, ivB64Url: String, plaintext: String): Str
 
 private fun padBase64Url(value: String): String =
     value.padEnd(value.length + (4 - value.length % 4) % 4, '=')
-
-fun main() {
-    val apiKey = "11111111-1111-4111-8111-111111111111"
-    val ivB64Url = "AAAAAAAAAAAAAAAA"
-    val plaintext = """
-  {
-    "cardNumber": "1111-1111-1111-1111",
-    "birthDate": "19900101",
-    "expiry": "1227",
-    "password": "12",
-    "amount": 10000
-  }
-  """.trimIndent()
-
-    val enc = encryptToBase64Url(apiKey, ivB64Url, plaintext)
-    println(enc)
-}

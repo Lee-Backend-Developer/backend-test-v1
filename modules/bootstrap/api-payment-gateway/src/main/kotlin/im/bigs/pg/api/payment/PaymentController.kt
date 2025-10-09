@@ -4,6 +4,8 @@ import im.bigs.pg.api.payment.dto.CreatePaymentRequest
 import im.bigs.pg.api.payment.dto.PaymentResponse
 import im.bigs.pg.api.payment.dto.QueryResponse
 import im.bigs.pg.api.payment.dto.Summary
+import im.bigs.pg.api.payment.util.encryptToBase64Url
+import im.bigs.pg.application.payment.port.`in`.EncryptedCardRequest
 import im.bigs.pg.application.payment.port.`in`.PaymentCommand
 import im.bigs.pg.application.payment.port.`in`.PaymentUseCase
 import im.bigs.pg.application.payment.port.`in`.QueryFilter
@@ -40,13 +42,31 @@ class PaymentController(
      */
     @PostMapping
     fun create(@RequestBody req: CreatePaymentRequest): ResponseEntity<PaymentResponse> {
+        // todo apiKey, ivB64Url은 언제든지 변경 될 수 있음
+        val apiKey = "11111111-1111-4111-8111-111111111111"
+        val ivB64Url = "AAAAAAAAAAAAAAAA"
+        val plaintext = """
+  {
+    "cardNumber": "${req.cardInfo.cardBin + "-" + req.cardInfo.cardLast4}",
+    "birthDate": "${req.cardInfo.birthDate}",
+    "expiry": "${req.cardInfo.expiry}",
+    "password": "${req.cardInfo.password}",
+    "amount": ${req.amount}
+  }
+  """.trimIndent()
+        val enc = encryptToBase64Url(apiKey, ivB64Url, plaintext)
+
+        println("enc: $enc")
+
+
         val saved = paymentUseCase.pay(
             PaymentCommand(
                 partnerId = req.partnerId,
                 amount = req.amount,
-                cardBin = req.cardBin,
-                cardLast4 = req.cardLast4,
+                cardBin = req.cardInfo.cardBin,
+                cardLast4 = req.cardInfo.cardLast4,
                 productName = req.productName,
+                encryptedCard = EncryptedCardRequest(enc, ivB64Url),
             ),
         )
         return ResponseEntity.ok(PaymentResponse.from(saved))
