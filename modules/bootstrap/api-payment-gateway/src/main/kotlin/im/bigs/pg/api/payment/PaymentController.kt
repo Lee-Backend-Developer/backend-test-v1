@@ -4,12 +4,12 @@ import im.bigs.pg.api.payment.dto.CreatePaymentRequest
 import im.bigs.pg.api.payment.dto.PaymentResponse
 import im.bigs.pg.api.payment.dto.QueryResponse
 import im.bigs.pg.api.payment.dto.Summary
-import im.bigs.pg.api.payment.util.encryptToBase64Url
-import im.bigs.pg.application.payment.port.`in`.EncryptedCardRequest
+import im.bigs.pg.api.payment.service.CardEncryptionService
 import im.bigs.pg.application.payment.port.`in`.PaymentCommand
 import im.bigs.pg.application.payment.port.`in`.PaymentUseCase
 import im.bigs.pg.application.payment.port.`in`.QueryFilter
 import im.bigs.pg.application.payment.port.`in`.QueryPaymentsUseCase
+import im.bigs.pg.application.pg.port.out.EncryptedCardPayload
 import org.springframework.format.annotation.DateTimeFormat
 import org.springframework.http.ResponseEntity
 import org.springframework.validation.annotation.Validated
@@ -32,6 +32,7 @@ import java.time.LocalDateTime
 class PaymentController(
     private val paymentUseCase: PaymentUseCase,
     private val queryPaymentsUseCase: QueryPaymentsUseCase,
+    private val cardEncryptionService: CardEncryptionService,
 ) {
 
     /**
@@ -42,22 +43,7 @@ class PaymentController(
      */
     @PostMapping
     fun create(@RequestBody req: CreatePaymentRequest): ResponseEntity<PaymentResponse> {
-        // todo apiKey, ivB64Url은 언제든지 변경 될 수 있음
-        val apiKey = "11111111-1111-4111-8111-111111111111"
-        val ivB64Url = "AAAAAAAAAAAAAAAA"
-        val plaintext = """
-  {
-    "cardNumber": "${req.cardInfo.cardBin + "-" + req.cardInfo.cardLast4}",
-    "birthDate": "${req.cardInfo.birthDate}",
-    "expiry": "${req.cardInfo.expiry}",
-    "password": "${req.cardInfo.password}",
-    "amount": ${req.amount}
-  }
-  """.trimIndent()
-        val enc = encryptToBase64Url(apiKey, ivB64Url, plaintext)
-
-        println("enc: $enc")
-
+        val encryptedCard = cardEncryptionService.encryptCardInfo(req.cardInfo, req.amount)
 
         val saved = paymentUseCase.pay(
             PaymentCommand(
@@ -66,7 +52,10 @@ class PaymentController(
                 cardBin = req.cardInfo.cardBin,
                 cardLast4 = req.cardInfo.cardLast4,
                 productName = req.productName,
-                encryptedCard = EncryptedCardRequest(enc, ivB64Url),
+                encryptedCard = EncryptedCardPayload(
+                    enc = encryptedCard.encryptedData,
+                    iv = encryptedCard.iv,
+                ),
             ),
         )
         return ResponseEntity.ok(PaymentResponse.from(saved))

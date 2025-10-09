@@ -25,7 +25,7 @@ create table if not exists payment (
   applied_fee_rate decimal(10,6) not null,
   fee_amount decimal(15,0) not null,
   net_amount decimal(15,0) not null,
-  card_bin varchar(8) null,
+  card_bin varchar(12) null,
   card_last4 varchar(4) null,
   approval_code varchar(32) not null,
   approved_at timestamp not null,

@@ -44,6 +44,7 @@ class PaymentService(
                 cardBin = command.cardBin,
                 cardLast4 = command.cardLast4,
                 productName = command.productName,
+                encryptedCard = command.encryptedCard,
             ),
         )
 
@@ -61,7 +62,7 @@ class PaymentService(
             appliedFeeRate = rate,
             feeAmount = fee,
             netAmount = net,
-            cardBin = command.cardBin,
+            cardBin = command.cardBin!!.replace("-",""),
             cardLast4 = command.cardLast4,
             approvalCode = approve.approvalCode,
             approvedAt = approve.approvedAt,

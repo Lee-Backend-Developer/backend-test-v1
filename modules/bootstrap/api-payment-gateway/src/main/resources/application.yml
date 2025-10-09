@@ -6,7 +6,7 @@ spring:
     password: ""
   jpa:
     hibernate:
-      ddl-auto: update
+      ddl-auto: create
     properties:
       hibernate:
         format_sql: true
@@ -17,3 +17,13 @@ spring:
 server:
   port: 8080
 
+# 결제 관련 설정
+payment:
+  encryption:
+    api-key: ${PG_API_KEY:11111111-1111-4111-8111-111111111111}
+    iv-base64-url: ${PG_IV_BASE64_URL:AAAAAAAAAAAAAAAA}
+
+pg:
+  client:
+    base-url: https://api-test-pg.bigs.im
+    api-key: ${PG_API_KEY:11111111-1111-4111-8111-111111111111}

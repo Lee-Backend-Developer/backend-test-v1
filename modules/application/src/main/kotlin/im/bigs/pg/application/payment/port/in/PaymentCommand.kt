@@ -1,5 +1,6 @@
 package im.bigs.pg.application.payment.port.`in`
 
+import im.bigs.pg.application.pg.port.out.EncryptedCardPayload
 import java.math.BigDecimal
 
 /**
@@ -17,4 +18,5 @@ data class PaymentCommand(
     val cardBin: String? = null,
     val cardLast4: String? = null,
     val productName: String? = null,
+    val encryptedCard: EncryptedCardPayload,
 )

@@ -15,7 +15,7 @@ import kotlin.random.Random
  * 목업 PG: 모든 승인을 성공으로 처리합니다.
  * - 실제 네트워크 호출은 없으며, 시나리오 이해를 위한 더미 구성입니다.
  */
-@Component
+//@Component
 class MockPgClient : PgClientOutPort {
     override fun supports(partnerId: Long): Boolean = partnerId % 2L == 1L
 

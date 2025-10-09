@@ -28,7 +28,7 @@ class PaymentEntity(
     var feeAmount: BigDecimal,
     @Column(nullable = false, precision = 15, scale = 0)
     var netAmount: BigDecimal,
-    @Column(length = 8)
+    @Column(length = 12)
     var cardBin: String? = null,
     @Column(length = 4)
     var cardLast4: String? = null,
