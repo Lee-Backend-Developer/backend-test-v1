@@ -56,8 +56,7 @@ class PgClient(
 
         val approvedAt = response.parseApprovedAt() ?: LocalDateTime.now(ZoneOffset.UTC)
 
-        val status = response.status?.let { runCatching { PaymentStatus.valueOf(it) }.getOrNull() }
-            ?: PaymentStatus.APPROVED
+        val status = PaymentStatus.fromRaw(response.status) ?: PaymentStatus.APPROVED
 
         return PgApproveResult(
             approvalCode = approvalCode,

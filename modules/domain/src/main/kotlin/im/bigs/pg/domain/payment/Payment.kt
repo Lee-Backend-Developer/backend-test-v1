@@ -45,7 +45,22 @@ data class Payment(
 /** 결제 상태.
  * - 승인(Approved), 취소(Canceled) 등 단순 상태를 표현합니다.
  */
-enum class PaymentStatus { APPROVED, CANCELED }
+enum class PaymentStatus {
+    APPROVED,
+    CANCELED,
+    ;
+
+    companion object {
+        fun fromRaw(value: String?): PaymentStatus? {
+            if (value.isNullOrBlank()) return null
+            return when (value.trim().uppercase()) {
+                "APPROVED" -> APPROVED
+                "CANCELED", "CANCELLED" -> CANCELED
+                else -> null
+            }
+        }
+    }
+}
 
 /** 조회 API의 통계 응답에 사용되는 값 모음. */
 /** 조회 API의 통계 응답에 사용되는 값 모음. */
