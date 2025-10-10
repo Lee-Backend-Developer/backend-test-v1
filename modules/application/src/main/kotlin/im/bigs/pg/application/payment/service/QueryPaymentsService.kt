@@ -4,16 +4,15 @@ import im.bigs.pg.application.payment.port.`in`.QueryFilter
 import im.bigs.pg.application.payment.port.`in`.QueryPaymentsUseCase
 import im.bigs.pg.application.payment.port.`in`.QueryResult
 import im.bigs.pg.application.payment.port.out.PaymentOutPort
-import im.bigs.pg.application.payment.port.out.PaymentPage
 import im.bigs.pg.application.payment.port.out.PaymentQuery
 import im.bigs.pg.application.payment.port.out.PaymentSummaryFilter
-import im.bigs.pg.application.payment.port.out.PaymentSummaryProjection
 import im.bigs.pg.domain.payment.PaymentStatus
 import im.bigs.pg.domain.payment.PaymentSummary
 import org.springframework.stereotype.Service
 import java.time.Instant
+import java.time.LocalDateTime
+import java.time.ZoneOffset
 import java.util.Base64
-import javax.management.Query
 
 /**
  * 결제 이력 조회 유스케이스 구현체.
@@ -34,29 +33,50 @@ class QueryPaymentsService(
      * @return 조회 결과(목록/통계/커서)
      */
     override fun query(filter: QueryFilter): QueryResult {
+        val (cursorInstant, cursorId) = decodeCursor(filter.cursor)
+        val status = PaymentStatus.fromRaw(filter.status)
 
-        val items : PaymentPage = repo.findBy(
-            query = PaymentQuery(
+        val page = repo.findBy(
+            PaymentQuery(
                 partnerId = filter.partnerId,
+                status = status,
                 from = filter.from,
                 to = filter.to,
-            )
+                limit = filter.limit,
+                cursorCreatedAt = cursorInstant?.let { LocalDateTime.ofInstant(it, ZoneOffset.UTC) },
+                cursorId = cursorId,
+            ),
         )
 
-        val summary : PaymentSummaryProjection = repo.summary(
-            filter = PaymentSummaryFilter(
+        val summaryProjection = repo.summary(
+            PaymentSummaryFilter(
                 partnerId = filter.partnerId,
-                status = PaymentStatus.fromRaw(filter.status),
+                status = status,
                 from = filter.from,
                 to = filter.to,
+            ),
+        )
+
+        val nextCursor = if (page.hasNext) {
+            encodeCursor(
+                page.nextCursorCreatedAt?.toInstant(ZoneOffset.UTC),
+                page.nextCursorId,
             )
+        } else {
+            null
+        }
+
+        val summary = PaymentSummary(
+            count = summaryProjection.count,
+            totalAmount = summaryProjection.totalAmount,
+            totalNetAmount = summaryProjection.totalNetAmount,
         )
 
         return QueryResult(
-            items = items.items,
-            summary = PaymentSummary(count = summary.count, totalAmount = summary.totalAmount, totalNetAmount = summary.totalNetAmount),
-            nextCursor = null,
-            hasNext = items.hasNext,
+            items = page.items,
+            summary = summary,
+            nextCursor = nextCursor,
+            hasNext = page.hasNext,
         )
     }
 
