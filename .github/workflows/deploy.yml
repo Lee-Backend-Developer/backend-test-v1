@@ -1,69 +1,58 @@
-name: Compose → GAR → Cloud Run
+  name: Deploy to Cloud Run
 
-on:
-  push:
-    branches: [ "main" ]
-  workflow_dispatch:
+  on:
+    push:
+      branches: [ "main" ] # main에 push 시 배포
 
-env:
-  PROJECT_ID: ${{ secrets.PROJECT_ID }}
-  REGION: ${{ secrets.REGION }}
-  REPO_NAME: ${{ secrets.REPO_NAME }}
-  # 배포할 서비스 목록 (compose 서비스명과 동일)
-  SERVICES: "api worker"
+  env:
+    PROJECT_ID: ${{ secrets.PROJECT_ID }}
+    REGION: ${{ secrets.REGION }}
+    REPO_NAME: ${{ secrets.REPO_NAME }}
+    SERVICE: ${{ secrets.SERVICE }}
+    RUNTIME_SA: ${{ secrets.RUNTIME_SA }}
+    IMAGE: ${{ secrets.REGION }}-docker.pkg.dev/${{ secrets.PROJECT_ID }}/${{ secrets.REPO_NAME }}/${{ secrets.SERVICE }}
 
-jobs:
-  deploy:
-    runs-on: ubuntu-latest
+  jobs:
+    deploy:
+      runs-on: ubuntu-latest
 
-    steps:
-      - uses: actions/checkout@v4
+      steps:
+        - uses: actions/checkout@v4
 
-      - name: Auth to Google Cloud
-        uses: google-github-actions/auth@v2
-        with:
-          credentials_json: ${{ secrets.GCP_SA_KEY }}
+        - name: Auth to Google Cloud
+          uses: google-github-actions/auth@v2
+          with:
+            credentials_json: ${{ secrets.GCP_SA_KEY }}
 
-      - name: Setup gcloud
-        uses: google-github-actions/setup-gcloud@v2
+        - name: Setup gcloud
+          uses: google-github-actions/setup-gcloud@v2
 
-      - name: Configure Docker auth for Artifact Registry
-        run: gcloud auth configure-docker $REGION-docker.pkg.dev --quiet
+        - name: Configure Docker auth for Artifact Registry
+          run: gcloud auth configure-docker ${{ secrets.REGION }}-docker.pkg.dev --quiet
 
-      - name: Enable Buildx
-        run: |
-          docker buildx create --use
-          docker buildx inspect --bootstrap
+        - name: Build & Push (with cache)
+          run: |
+            docker buildx create --use
+            docker buildx build \
+              --tag ${IMAGE}:${GITHUB_SHA} \
+              --tag ${IMAGE}:latest \
+              --cache-from=type=registry,ref=${IMAGE}:latest \
+              --cache-to=type=inline \
+              --push .
 
-      # compose의 image에 모두 GAR 경로가 있어야 합니다.
-      # 각 서비스에 대해 :{GITHUB_SHA} 태그도 함께 푸시
-      - name: Build & Push all services with compose
-        run: |
-          # 기본 태그(:latest) 빌드 & 푸시
-          docker compose build
-          docker compose push
-
-          # 커밋 해시 태그 추가 푸시 (롤백/추적 용이)
-          for S in $SERVICES; do
-            BASE="${REGION}-docker.pkg.dev/${PROJECT_ID}/${REPO_NAME}/${S}"
-            docker tag "${BASE}:latest" "${BASE}:${GITHUB_SHA}"
-            docker push "${BASE}:${GITHUB_SHA}"
-          done
-
-      # 단일 컨테이너 Cloud Run로 각각 배포 (서비스별 1:1)
-      - name: Deploy each service to Cloud Run
-        run: |
-          # 필요시 서비스별 리소스/옵션을 분기 처리하세요.
-          for S in $SERVICES; do
-            IMAGE="${REGION}-docker.pkg.dev/${PROJECT_ID}/${REPO_NAME}/${S}:${GITHUB_SHA}"
-            # Cloud Run 서비스명은 compose 서비스명과 동일하게 사용 (원하면 변경 가능)
-            gcloud run deploy "$S" \
-              --image="$IMAGE" \
-              --region="$REGION" \
+        - name: Deploy to Cloud Run
+          run: |
+            gcloud run deploy ${SERVICE} \
+              --image=${IMAGE}:${GITHUB_SHA} \
+              --region=${REGION} \
               --platform=managed \
               --allow-unauthenticated \
               --port=8080 \
               --cpu=1 --memory=512Mi \
               --min-instances=0 --max-instances=10 \
-              --concurrency=80
-          done
+              --concurrency=80 \
+              $( [[ -n "${RUNTIME_SA}" ]] && echo "--service-account=${RUNTIME_SA}" )
+              # (선택) 환경변수
+              # --set-env-vars=SPRING_PROFILES_ACTIVE=prod,LOG_LEVEL=INFO
+              # (선택) 시크릿 연동
+              # --update-secrets=DB_PASSWORD=db_password:latest
