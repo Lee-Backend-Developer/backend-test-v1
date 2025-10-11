@@ -30,20 +30,25 @@
         - name: Configure Docker auth for Artifact Registry
           run: gcloud auth configure-docker ${{ secrets.REGION }}-docker.pkg.dev --quiet
 
+        - name: Normalize image reference
+          run: |
+            IMAGE_LOWER=$(echo "${IMAGE}" | tr '[:upper:]' '[:lower:]')
+            echo "IMAGE_NORMALIZED=${IMAGE_LOWER}" >> "$GITHUB_ENV"
+
         - name: Build & Push (with cache)
           run: |
             docker buildx create --use
             docker buildx build \
-              --tag ${IMAGE}:${GITHUB_SHA} \
-              --tag ${IMAGE}:latest \
-              --cache-from=type=registry,ref=${IMAGE}:latest \
+              --tag ${IMAGE_NORMALIZED}:${GITHUB_SHA,,} \
+              --tag ${IMAGE_NORMALIZED}:latest \
+              --cache-from=type=registry,ref=${IMAGE_NORMALIZED}:latest \
               --cache-to=type=inline \
               --push .
 
         - name: Deploy to Cloud Run
           run: |
             gcloud run deploy ${SERVICE} \
-              --image=${IMAGE}:${GITHUB_SHA} \
+              --image=${IMAGE_NORMALIZED}:${GITHUB_SHA,,} \
               --region=${REGION} \
               --platform=managed \
               --allow-unauthenticated \
