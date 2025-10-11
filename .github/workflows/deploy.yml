@@ -1,0 +1,58 @@
+name: Deploy to Cloud Run
+
+on:
+  push:
+    branches: [ "main" ] # main에 push 시 배포
+
+env:
+  PROJECT_ID: ${{ secrets.PROJECT_ID }}
+  REGION: ${{ secrets.REGION }}
+  REPO_NAME: ${{ secrets.REPO_NAME }}
+  SERVICE: ${{ secrets.SERVICE }}
+  RUNTIME_SA: ${{ secrets.RUNTIME_SA }}
+  IMAGE: ${{ secrets.REGION }}-docker.pkg.dev/${{ secrets.PROJECT_ID }}/${{ secrets.REPO_NAME }}/${{ secrets.SERVICE }}
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Auth to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
+
+      - name: Setup gcloud
+        uses: google-github-actions/setup-gcloud@v2
+
+      - name: Configure Docker auth for Artifact Registry
+        run: gcloud auth configure-docker ${{ secrets.REGION }}-docker.pkg.dev --quiet
+
+      - name: Build & Push (with cache)
+        run: |
+          docker buildx create --use
+          docker buildx build \
+            --tag ${IMAGE}:${GITHUB_SHA} \
+            --tag ${IMAGE}:latest \
+            --cache-from=type=registry,ref=${IMAGE}:latest \
+            --cache-to=type=inline \
+            --push .
+
+      - name: Deploy to Cloud Run
+        run: |
+          gcloud run deploy ${SERVICE} \
+            --image=${IMAGE}:${GITHUB_SHA} \
+            --region=${REGION} \
+            --platform=managed \
+            --allow-unauthenticated \
+            --port=8080 \
+            --cpu=1 --memory=512Mi \
+            --min-instances=0 --max-instances=10 \
+            --concurrency=80 \
+            $( [[ -n "${RUNTIME_SA}" ]] && echo "--service-account=${RUNTIME_SA}" )
+            # (선택) 환경변수
+            # --set-env-vars=SPRING_PROFILES_ACTIVE=prod,LOG_LEVEL=INFO
+            # (선택) 시크릿 연동
+            # --update-secrets=DB_PASSWORD=db_password:latest
