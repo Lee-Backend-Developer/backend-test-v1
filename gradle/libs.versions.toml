@@ -3,6 +3,8 @@ jackson = "2.16.1"
 mockk = "1.13.5"
 junit-platform = "1.10.2"
 fixture = "1.2.0"
+asciidoctor = "4.0.2"
+restdocs = "3.0.1"
 
 [libraries]
 kotlin-reflect = { module = "org.jetbrains.kotlin:kotlin-reflect" }
@@ -19,13 +21,14 @@ spring-boot-starter-test = { module = "org.springframework.boot:spring-boot-star
 spring-boot-starter-logging = { module = "org.springframework.boot:spring-boot-starter-logging" }
 
 spring-context = { module = "org.springframework:spring-context" }
-spring-mockk = { module = "io.mockk:mockk", version.ref = "mockk" }
+spring-mockk = { module = "com.ninja-squad:springmockk", version = "4.0.2" }
 
 database-h2 = { module = "com.h2database:h2" }
 database-mariadb = { module = "org.mariadb.jdbc:mariadb-java-client" }
 
 test-junit-platform-launcher = { module = "org.junit.platform:junit-platform-launcher", version.ref = "junit-platform" }
 test-fixture = { module = "com.appmattus.fixture:fixture", version.ref = "fixture" }
+spring-restdocs-mockmvc = { module = "org.springframework.restdocs:spring-restdocs-mockmvc", version.ref = "restdocs" }
 
 [bundles]
 jackson = [
