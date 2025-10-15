@@ -4,10 +4,10 @@ import im.bigs.pg.application.partner.port.out.FeePolicyOutPort
 import im.bigs.pg.application.partner.port.out.PartnerOutPort
 import im.bigs.pg.application.payment.port.`in`.PaymentCommand
 import im.bigs.pg.application.payment.port.out.PaymentOutPort
+import im.bigs.pg.application.pg.port.out.EncryptedCardPayload
 import im.bigs.pg.application.pg.port.out.PgApproveRequest
 import im.bigs.pg.application.pg.port.out.PgApproveResult
 import im.bigs.pg.application.pg.port.out.PgClientOutPort
-import im.bigs.pg.application.pg.port.out.EncryptedCardPayload
 import im.bigs.pg.domain.partner.FeePolicy
 import im.bigs.pg.domain.partner.Partner
 import im.bigs.pg.domain.payment.Payment
@@ -51,6 +51,7 @@ class PaymentServiceTest {
         val cmd = PaymentCommand(
             partnerId = 1L,
             amount = BigDecimal("10000"),
+            cardBin = "111111",
             cardLast4 = "4242",
             encryptedCard = EncryptedCardPayload("encrypted-data", "iv-data"),
         )
@@ -82,6 +83,7 @@ class PaymentServiceTest {
 
         val cmd = PaymentCommand(
             partnerId = 1L,
+            cardBin = "111111",
             amount = BigDecimal("10000"),
             cardLast4 = "4242",
             encryptedCard = EncryptedCardPayload("encrypted-data", "iv-data"),
