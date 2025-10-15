@@ -1,9 +1,38 @@
+plugins {
+    id("org.asciidoctor.jvm.convert") version "4.0.2"
+}
+
+val snippetsDir = file("build/generated-snippets")
+
 tasks.jar {
     enabled = false
 }
 
 tasks.bootJar {
     enabled = true
+    dependsOn(tasks.asciidoctor)
+    from("${tasks.asciidoctor.get().outputDir}") {
+        into("static/docs")
+    }
+}
+
+tasks.test {
+    outputs.dir(snippetsDir)
+}
+
+tasks.asciidoctor {
+    inputs.dir(snippetsDir)
+    dependsOn(tasks.test)
+    baseDirFollowsSourceDir()
+
+    attributes(
+        mapOf(
+            "snippets" to snippetsDir,
+            "source-highlighter" to "highlight.js",
+            "toclevels" to "3",
+            "sectlinks" to "true"
+        )
+    )
 }
 
 dependencies {
@@ -18,5 +47,6 @@ dependencies {
         exclude(module = "mockito-core")
     }
     testImplementation(libs.spring.mockk)
+    testImplementation(libs.spring.restdocs.mockmvc)
     testImplementation(libs.database.h2)
 }
