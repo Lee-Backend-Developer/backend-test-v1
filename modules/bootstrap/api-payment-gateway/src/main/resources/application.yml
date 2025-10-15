@@ -1,18 +1,17 @@
 spring:
   datasource:
-#    url: jdbc:h2:mem:pgdb;MODE=MySQL;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
-#    driver-class-name: org.h2.Driver
-#    url: jdbc:mysql://localhost:3306/pgdb?useSSL=false&serverTimezone=Asia/Seoul&characterEncoding=UTF-8
-#    driver-class-name: com.mysql.cj.jdbc.Driver
-    url: ${{ secrets.db_url }}
+    #    url: jdbc:h2:mem:pgdb;MODE=MySQL;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
+    #    driver-class-name: org.h2.Driver
+    #    url: jdbc:mysql://localhost:3306/pgdb?useSSL=false&serverTimezone=Asia/Seoul&characterEncoding=UTF-8
+    #    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://34.130.24.133:3306/pgdb?useSSL=false&serverTimezone=Asia/Seoul&characterEncoding=UTF-8
     driver-class-name: com.mysql.cj.jdbc.Driver
-
-    username: ${{ secrets.db_username }}
-    password: ${{ secrets.db_password }}
+    username: root
+    password: Bigs1234!
 
   jpa:
     hibernate:
-      ddl-auto: create
+      ddl-auto: update
     properties:
       hibernate:
         format_sql: true
@@ -21,7 +20,7 @@ spring:
     serialization:
       write-dates-as-timestamps: false
 server:
-  port: 8080
+  port: ${PORT:8080}
 
 # 결제 관련 설정
 payment:
