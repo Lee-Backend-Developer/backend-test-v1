@@ -51,7 +51,6 @@
               --image=${IMAGE_NORMALIZED}:${GITHUB_SHA,,} \
               --region=${REGION} \
               --platform=managed \
-              --allow-unauthenticated \
               --port=8080 \
               --cpu=1 --memory=512Mi \
               --min-instances=0 --max-instances=10 \
